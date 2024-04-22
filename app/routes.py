@@ -11,7 +11,10 @@ def index():
     return render_template('index.html')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
                                     # >>>> USER/BUYER ENDPOINTS <<<<<<
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: CREATE USER
 @app.route('/users', methods=['POST'])
@@ -75,22 +78,149 @@ def get_token():
 
 
                                     # >>>> VENDOR ENDPOINTS <<<<<<
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE VENDOR
+@app.route('/vendors', methods=['POST'])
+def add_vendor():
+    # Make sure request body is json
+    if not request.id_json:
+        return {'Error':'Your content type must be application/json'}, 400
+    # Get data from request body
+    data = request.json
+    # Validate is has req. fields
+    required_fields = ['companyName', 'address']
+    missing_fields = []
+    for field in required_fields:
+        if field not in data:
+            missing_fields.append(field)
+    if missing_fields:
+        return {'error': f"{', '.join(missing_fields)} must be in the request body"}, 400
+    
+    # Pull data from request body
+    company_name = data.get('companyName')
+    address = data.get('address')
+  
+    # Verify company name isn't already used
+    check_vendors = db.session.execute(db.select(Vendor).where((Vendor.company_name == company_name))).scalars().all() 
+    if check_vendors:
+        return {'error': 'A user with that username and/or email already exists'}, 400
+
+    # After checks, create user
+    new_vendor = Vendor(company_name=company_name, address=address)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE VENDOR
+@app.route('/vendors/<int:ven_id>', methods=['DELETE'])
+@token_auth.login_required
+def delete_vendor(ven_id):
+    # Check if Vendor exists
+    vendor = db.session.get(Vendor, ven_id)
+    if vendor is None:
+        return {'error': 'This user does not exists'}, 404
+    vendor.delete()
+    return {'success': f"User '{vendor.company_name} was deleted successfully."}, 200
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# > FUNCTIONALITY: GET TOKEN
+    # Allow vendor instances to be deleted via token auth
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
                                         # >>>> REVIEW ENDPOINTS <<<<<<
+
+                                        
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: CREATE NEW REVIEW
+@app.route('/reviews', methods=['POST'])
+@token_auth.login_required
+def create_review():
+    # Req Obj must be json
+    if not request.is_json:
+        return {'error':'your content type must be application/json'}, 400
+    data = request.json
+    required_fields = ['title', 'body', 'rating']
+    missing_fields = []
+    for field in required_fields:
+        if field not in data:
+            missing_fields.append(field)
+    if missing_fields:
+        return {'error':f'{', '.join(missing_fields)} must be in the request body'}
+
+    title = data.get('title')
+    body = data.get('body')
+    rating = data.get('rating')
+
+    current_user = token_auth.current_user() # allows us to grab current user ID
+
+    # ????????? HOW TO GET VENDOR_ID?? 
+
+    new_review = Review(title=title, body=body, rating=rating, user_id=current_user.id)
+    return new_review.to_dict(), 201
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE ALL REVIEWS
+# > FUNCTIONALIY: SEE REVIEWS BY TITLE SEARCH
+@app.route('/reviews>')
+def search_vendor_reviews():
+    select_stmt = db.select(Review)
+    search = request.args.get('search')
+    if search:
+        select_stmt = select_stmt.where(Review.title.ilike(f"%{search}"))
+    reviews = db.session.execute(db.select(Review)).scalars().all()
+    return [r.to_dict() for r in reviews]
+        
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE REVIEW BY ID
+# > FUNCTIONALIY: SEE ALL REVIEWs BY VENDOR COMPANY_NAME
+@app.route('/reviews/<str:company_name>')
+def get_vendor_reviews(company_name):
+    review = db.session.get(Review, company_name)
+    if review:
+        return review.to_dict()
+    return f'This company currently has no reviews'
+    
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: UPDATE REVIEW
+@app.route('/tasks/<int:review_id>', methods=['PUT'])
+@token_auth.login_required
+def edit_review(review_id):
+    # Check to see that they have a json body
+    if not request.is_json:
+        return {'error':'Your content-type must be application/json'}, 400
+    # find task by ID in database
+    review = db.session.get(Review, review_id)
+    if review is None:
+        return {'error':'Review with an ID of #{review_id} does not exist'}, 404
+    # Get current user based on token
+    current_user = token_auth.current_user()
+    #check if current user is author of task
+    if current_user is not review.author:
+        return {'error':"You do not have permission to edit this review"}, 403
+    
+    # Get data from Request:
+    data = request.json
+    # Pass that data into the task's update method
+    review.update(**data)
+    return review.to_dict() 
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE REVIEW
+@app.route('/tasks/<int:review_id>', methods=['DELETE'])
+@token_auth.login_required
+def delete_review(review_id):
+    #check if the task exists 
+    review = db.session.get(Review, review_id)
+    if review is None:
+        return {'error': 'This review does not exist'}, 404
+    
+    # make sure user trying to delete is the user whom create it 
+    current_user = token_auth.current_user()
+    if review.author is not current_user:
+        return {'error':'You do not have permission to delete this review'}, 403 
+    
+    # delete task, calling delete method 
+    review.delete()
+    return {'success':f'{review.title} was deleted successfully'}, 200
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
