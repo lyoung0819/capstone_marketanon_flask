@@ -58,3 +58,71 @@ class UserBuyer(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+
+class Vendor(db.Model):
+    id = db.Column(db.INTEGER, primary_key=True)
+    company_name = db.Column(db.String, nullable=False, unique=True)
+    address = db.Column(db.String, nullable=False)
+
+    def __repr__(self):
+        return f"<Company {self.id}|{self.company_name}>"
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "companyName": self.company_name,
+            "address": self.address
+        }
+
+
+
+class Review(db.Model):
+    id = db.Column(db.INTEGER, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    body = db.Column(db.String, nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    dateCreated = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)) 
+    user_id = db.Column(db.Integer, db.ForeignKey('user_buyer.id'), nullable=False) 
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    author = db.relationship('UserBuyer', back_populates='reviews')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.save()
+    
+    def __repr__(self):
+        return f"<Review {self.id}|{self.title}|{self.author}>"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "body": self.body,
+            "rating": self.rating,
+            "dateCreated": self.dateCreated,
+            "author": self.author.to_dict()  
+        }
+    
+    def update(self, **kwargs):
+        allowed_fields = {'title', 'body', 'rating'}
+        for key, value in kwargs.items():
+            if key in allowed_fields:
+                setattr(self, key, value)
+        self.save()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
