@@ -61,9 +61,13 @@ class UserBuyer(db.Model):
 
 
 class Vendor(db.Model):
-    id = db.Column(db.INTEGER, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String, nullable=False, unique=True)
     address = db.Column(db.String, nullable=False)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.save()
 
     def __repr__(self):
         return f"<Company {self.id}|{self.company_name}>"
@@ -86,7 +90,7 @@ class Vendor(db.Model):
 
 
 class Review(db.Model):
-    id = db.Column(db.INTEGER, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     body = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)

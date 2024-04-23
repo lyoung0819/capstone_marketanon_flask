@@ -113,7 +113,6 @@ def add_vendor():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE VENDOR
 @app.route('/vendors/<int:ven_id>', methods=['DELETE'])
-@token_auth.login_required
 def delete_vendor(ven_id):
     # Check if Vendor exists
     vendor = db.session.get(Vendor, ven_id)
@@ -131,7 +130,7 @@ def find_vendors():
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALITY: GET TOKEN
-    # Allow vendor instances to be deleted via token auth
+    # ROADMAP ITEM: Allow vendor instances to be deleted via token auth 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -148,7 +147,7 @@ def create_review():
     if not request.is_json:
         return {'error':'your content type must be application/json'}, 400
     data = request.json
-    required_fields = ['title', 'body', 'rating']
+    required_fields = ['vendor', 'title', 'body', 'rating']
     missing_fields = []
     for field in required_fields:
         if field not in data:
@@ -156,42 +155,50 @@ def create_review():
     if missing_fields:
         return {'error':f"{', '.join(missing_fields)} must be in the request body"}
 
+    vendor = data.get('vendor')
     title = data.get('title')
     body = data.get('body')
     rating = data.get('rating')
 
-    current_user = token_auth.current_user() # allows us to grab current user ID
+    # Grab current user ID 
+    current_user = token_auth.current_user() 
+    # Grab vendor ID
+    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(company_name=vendor)).scalar_one()
+    # check_vendors = db.session.execute(db.select(Vendor).where((Vendor.company_name == vendor))).scalars().all() 
+    # if check_vendors:
+    #     grabbed_vendor = db.session.get(Vendor).where(Vendor.company_name == vendor)
+    # else:
+    #     return {'error': 'This vendor does not exist'}, 403
 
-    # ????????? HOW TO GET VENDOR_ID?? 
-
-    new_review = Review(title=title, body=body, rating=rating, user_id=current_user.id)
+    new_review = Review(title=title, body=body, rating=rating, user_id=current_user.id, vendor_id=grabbed_vendor.id)
     return new_review.to_dict(), 201
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE REVIEWS BY TITLE SEARCH
-@app.route('/reviews>')
-def search_vendor_reviews():
-    select_stmt = db.select(Review)
-    search = request.args.get('search')
-    if search:
-        select_stmt = select_stmt.where(Review.title.ilike(f"%{search}"))
-    reviews = db.session.execute(db.select(Review)).scalars().all()
-    return [r.to_dict() for r in reviews]
+# @app.route('/reviews>')
+# def search_vendor_reviews():
+#     select_stmt = db.select(Review)
+#     search = request.args.get('search')
+#     if search:
+#         select_stmt = select_stmt.where(Review.title.ilike(f"%{search}"))
+#     reviews = db.session.execute(db.select(Review)).scalars().all()
+#     return [r.to_dict() for r in reviews]
         
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE ALL REVIEWs BY VENDOR COMPANY_NAME
+# > FUNCTIONALIY: SEE ALL REVIEWS BY VENDOR COMPANY_NAME
 @app.route('/reviews/<company_name>')
 def get_vendor_reviews(company_name):
-    review = db.session.get(Review, company_name)
-    if review:
-        return review.to_dict()
+    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(company_name=company_name)).scalar_one()
+    reviews = db.session.execute(db.select(Review).where((Review.vendor_id == grabbed_vendor.id))).scalars().all()
+    if reviews:
+        return [r.to_dict() for r in reviews]
     return f'This company currently has no reviews'
     
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: UPDATE REVIEW
-@app.route('/tasks/<int:review_id>', methods=['PUT'])
+@app.route('/reviews/<int:review_id>', methods=['PUT'])
 @token_auth.login_required
 def edit_review(review_id):
     # Check to see that they have a json body
@@ -215,7 +222,7 @@ def edit_review(review_id):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE REVIEW
-@app.route('/tasks/<int:review_id>', methods=['DELETE'])
+@app.route('/reviews/<int:review_id>', methods=['DELETE'])
 @token_auth.login_required
 def delete_review(review_id):
     #check if the task exists 
