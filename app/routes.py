@@ -20,7 +20,7 @@ def index():
 @app.route('/users', methods=['POST'])
 def create_user():
     # Make sure request body is json
-    if not request.id_json:
+    if not request.is_json:
         return {'Error':'Your content type must be application/json'}, 400
     # Get data from request body
     data = request.json
@@ -49,7 +49,7 @@ def create_user():
 
     # After checks, create user
     new_user = UserBuyer(first_name=first_name, last_name=last_name, username=username, email=email, title=title, company=company, password=password)
-
+    return new_user.to_dict()
     ###ROADMAP ITEM: Authenticating new user email with company SSO via openAuth?
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE USER
@@ -81,11 +81,11 @@ def get_token():
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: DELETE VENDOR
+# > FUNCTIONALIY: ADD VENDOR
 @app.route('/vendors', methods=['POST'])
 def add_vendor():
     # Make sure request body is json
-    if not request.id_json:
+    if not request.is_json:
         return {'Error':'Your content type must be application/json'}, 400
     # Get data from request body
     data = request.json
@@ -109,7 +109,7 @@ def add_vendor():
 
     # After checks, create user
     new_vendor = Vendor(company_name=company_name, address=address)
-
+    return new_vendor.to_dict()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE VENDOR
 @app.route('/vendors/<int:ven_id>', methods=['DELETE'])
@@ -122,6 +122,14 @@ def delete_vendor(ven_id):
     vendor.delete()
     return {'success': f"User '{vendor.company_name} was deleted successfully."}, 200
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# > FUNCTIONALITY: SEE ALL VENDORS
+@app.route('/vendors')
+@basic_auth.login_required
+def find_vendors():
+    vendors = db.session.execute(db.select(Vendor)).scalars().all() 
+    return [v.to_dict() for v in vendors]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALITY: GET TOKEN
     # Allow vendor instances to be deleted via token auth
 
@@ -130,7 +138,7 @@ def delete_vendor(ven_id):
 
                                         # >>>> REVIEW ENDPOINTS <<<<<<
 
-                                        
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: CREATE NEW REVIEW
 @app.route('/reviews', methods=['POST'])
@@ -146,7 +154,7 @@ def create_review():
         if field not in data:
             missing_fields.append(field)
     if missing_fields:
-        return {'error':f'{', '.join(missing_fields)} must be in the request body'}
+        return {'error':f"{', '.join(missing_fields)} must be in the request body"}
 
     title = data.get('title')
     body = data.get('body')
@@ -173,7 +181,7 @@ def search_vendor_reviews():
         
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE ALL REVIEWs BY VENDOR COMPANY_NAME
-@app.route('/reviews/<str:company_name>')
+@app.route('/reviews/<company_name>')
 def get_vendor_reviews(company_name):
     review = db.session.get(Review, company_name)
     if review:
