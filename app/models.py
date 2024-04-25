@@ -14,7 +14,7 @@ class UserBuyer(db.Model):
     title = db.Column(db.String, nullable=False)
     company = db.Column(db.String, nullable=False)
     token = db.Column(db.String, unique=True)
-    token_exp = db.Column(db.String, unique=True)
+    token_exp = db.Column(db.DateTime(timezone.utc))
     date_created = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     reviews = db.relationship('Review', back_populates='author')
 
@@ -48,7 +48,7 @@ class UserBuyer(db.Model):
     
     def get_token(self):
         now = datetime.now(timezone.utc)
-        if self.token and self.token_exp.replace(tzinfo=timezone.utc) > now + timedelta(minutes=1):
+        if self.token and self.token_exp > now + timedelta(minutes=1):
             return self.token
         self.token = secrets.token_hex(16)
         self.token_exp = now + timedelta(hours=1)

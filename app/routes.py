@@ -76,6 +76,12 @@ def get_token():
     return user.get_token()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+@app.route('/users/me')
+@token_auth.login_required
+def get_met():
+    user = token_auth.current_user()
+    return user.to_dict()
+
 
                                     # >>>> VENDOR ENDPOINTS <<<<<<
 
@@ -195,7 +201,7 @@ def get_vendor_reviews(company_name):
     return f'This company currently has no reviews'
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE ALL REVIEWS BY USER ID -- NOT FUNCTIONING
+# > FUNCTIONALIY: SEE ALL REVIEWS BY USER ID 
 @app.route('/reviews/<int:user_id>')
 def get_user_reviews_by_ID(user_id):
     grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.id==user_id)).scalar_one_or_none()
