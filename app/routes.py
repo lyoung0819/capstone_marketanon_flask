@@ -193,7 +193,35 @@ def get_vendor_reviews(company_name):
     if reviews:
         return [r.to_dict() for r in reviews]
     return f'This company currently has no reviews'
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# > FUNCTIONALIY: SEE ALL REVIEWS BY USER ID -- NOT FUNCTIONING
+@app.route('/reviews/<int:user_id>')
+def get_user_reviews_by_ID(user_id):
+    grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.id==user_id)).scalar_one_or_none()
+    reviews = db.session.execute(db.select(Review).where((Review.user_id == grabbed_user.id))).scalars().all()
+    if reviews:
+        return [r.to_dict() for r in reviews]
+    return f'This company currently has no reviews'
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# > FUNCTIONALIY: SEE ALL REVIEWS BY USERNAME -- NOT FUNCTIONING
+@app.route('/reviews/<username>')
+def get_user_reviews(username):
+    user_reviews = db.session.execute(db.select(Review)).scalars().all()
+    user_ids = db.session.execute(db.select(UserBuyer)).scalars().all()
+    for r in user_reviews:
+        if r.user_id in user_ids:
+            rev = db.session.get(Review, r.user_id)
+            return [r.to_dict() for r in rev]
+    # grabbed_user = db.session.execute(db.select(UserBuyer).filter_by(username=username)).scalar_one_or_none()
+    # user_reviews = db.session.execute(db.select(Review).where((Review.user_id == grabbed_user.id))).scalars().all()
+    # if user_reviews:
+        # return [r.to_dict() for r in user_reviews]
+        else:
+            return f'This user currently has no reviews'
     
+# Make a join table? 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: UPDATE REVIEW
