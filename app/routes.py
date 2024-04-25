@@ -123,7 +123,6 @@ def delete_vendor(ven_id):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALITY: SEE ALL VENDORS
 @app.route('/vendors')
-@basic_auth.login_required
 def find_vendors():
     vendors = db.session.execute(db.select(Vendor)).scalars().all() 
     return [v.to_dict() for v in vendors]
