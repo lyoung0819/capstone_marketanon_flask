@@ -1,8 +1,8 @@
-"""empty message
+"""inital reset
 
-Revision ID: 2465ea54a5f9
+Revision ID: deb2a9c662aa
 Revises: 
-Create Date: 2024-04-22 22:14:55.989903
+Create Date: 2024-04-25 15:39:01.920794
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '2465ea54a5f9'
+revision = 'deb2a9c662aa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,23 +28,22 @@ def upgrade():
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('company', sa.String(), nullable=False),
     sa.Column('token', sa.String(), nullable=True),
-    sa.Column('token_exp', sa.String(), nullable=True),
+    sa.Column('token_exp', sa.DateTime(timezone=True), nullable=True),
     sa.Column('date_created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('token'),
-    sa.UniqueConstraint('token_exp'),
     sa.UniqueConstraint('username')
     )
     op.create_table('vendor',
-    sa.Column('id', sa.INTEGER(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_name', sa.String(), nullable=False),
     sa.Column('address', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('company_name')
     )
     op.create_table('review',
-    sa.Column('id', sa.INTEGER(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('body', sa.String(), nullable=False),
     sa.Column('rating', sa.Integer(), nullable=False),
