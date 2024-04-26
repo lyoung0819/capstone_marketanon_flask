@@ -13,9 +13,8 @@ class UserBuyer(db.Model):
     password = db.Column(db.String, nullable=False)
     title = db.Column(db.String, nullable=False)
     company = db.Column(db.String, nullable=False)
-    token = db.Column(db.String, unique=True)
+    token = db.Column(db.String, index=True, unique=True)
     token_exp = db.Column(db.DateTime(timezone=True))
-    date_created = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     reviews = db.relationship('Review', back_populates='author')
 
     def __init__(self, **kwargs):
@@ -49,7 +48,7 @@ class UserBuyer(db.Model):
     def get_token(self):
         now = datetime.now(timezone.utc)
         if self.token and self.token_exp > now + timedelta(minutes=1):
-            return self.token
+            return {"token": self.token, "tokenExpiration": self.token_exp}
         self.token = secrets.token_hex(16)
         self.token_exp = now + timedelta(hours=1)
         self.save()
@@ -103,7 +102,7 @@ class Review(db.Model):
         self.save()
     
     def __repr__(self):
-        return f"<Review {self.id}|{self.title}|{self.author}>"
+        return f"<Review ID: {self.id}|Vendor ID: {self.vendor_id}| Author: {self.author} |Title: {self.title}|>"
 
     def save(self):
         db.session.add(self)
@@ -115,12 +114,12 @@ class Review(db.Model):
             "title": self.title,
             "body": self.body,
             "rating": self.rating,
-            "dateCreated": self.dateCreated,
             "author": self.author.to_dict()  
         }
     
     def update(self, **kwargs):
         allowed_fields = {'title', 'body', 'rating'}
+
         for key, value in kwargs.items():
             if key in allowed_fields:
                 setattr(self, key, value)

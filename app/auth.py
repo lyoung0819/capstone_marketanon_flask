@@ -2,7 +2,6 @@ from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from . import db
 from .models import UserBuyer
 from datetime import datetime, timezone
-from dateutil.parser import parse
 
 
 basic_auth = HTTPBasicAuth()
@@ -19,14 +18,10 @@ def verify(username, password):
 def handle_error(status_code):
     return {'error':"Incorrect username and/or password. Please try again"}, status_code
 
-
-def convert_to_datetime(input_str, parserinfo=None):
-    return parse(input_str, parserinfo=parserinfo)
-
 @token_auth.verify_token
 def verify(token):
     user = db.session.execute(db.select(UserBuyer).where((UserBuyer.token==token))).scalar_one_or_none()
-    if user is not None and convert_to_datetime(user.token_exp) > datetime.now(timezone.utc):
+    if user is not None and user.token_exp > datetime.now(timezone.utc):
         return user
     return None
 

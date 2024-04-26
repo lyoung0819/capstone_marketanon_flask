@@ -168,7 +168,7 @@ def create_review():
     # Grab current user ID 
     current_user = token_auth.current_user() 
     # Grab vendor ID
-    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(company_name=vendor)).scalar_one()
+    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(Vendor.company_name==vendor)).scalar_one()
     # check_vendors = db.session.execute(db.select(Vendor).where((Vendor.company_name == vendor))).scalars().all() 
     # if check_vendors:
     #     grabbed_vendor = db.session.get(Vendor).where(Vendor.company_name == vendor)
@@ -189,12 +189,22 @@ def create_review():
 #         select_stmt = select_stmt.where(Review.title.ilike(f"%{search}"))
 #     reviews = db.session.execute(db.select(Review)).scalars().all()
 #     return [r.to_dict() for r in reviews]
-        
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# > FUNCTIONALIY: SEE ALL REVIEWS
+@app.route('/reviews')
+def get_reviews():
+    reviews = db.session.execute(db.select(Review)).scalars().all()
+    if reviews:
+        return [r.to_dict() for r in reviews]
+    else:
+        return 'There are currently no reviews. Come back later.'
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE ALL REVIEWS BY VENDOR COMPANY_NAME
 @app.route('/reviews/<company_name>')
 def get_vendor_reviews(company_name):
-    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(company_name=company_name)).scalar_one()
+    grabbed_vendor = db.session.execute(db.select(Vendor).where(Vendor.company_name==company_name)).scalar_one()
     reviews = db.session.execute(db.select(Review).where((Review.vendor_id == grabbed_vendor.id))).scalars().all()
     if reviews:
         return [r.to_dict() for r in reviews]
@@ -211,23 +221,16 @@ def get_user_reviews_by_ID(user_id):
     return f'This company currently has no reviews'
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE ALL REVIEWS BY USERNAME -- NOT FUNCTIONING
+# > FUNCTIONALIY: SEE ALL REVIEWS BY USERNAME 
 @app.route('/reviews/<username>')
 def get_user_reviews(username):
-    user_reviews = db.session.execute(db.select(Review)).scalars().all()
-    user_ids = db.session.execute(db.select(UserBuyer)).scalars().all()
-    for r in user_reviews:
-        if r.user_id in user_ids:
-            rev = db.session.get(Review, r.user_id)
-            return [r.to_dict() for r in rev]
-    # grabbed_user = db.session.execute(db.select(UserBuyer).filter_by(username=username)).scalar_one_or_none()
-    # user_reviews = db.session.execute(db.select(Review).where((Review.user_id == grabbed_user.id))).scalars().all()
-    # if user_reviews:
-        # return [r.to_dict() for r in user_reviews]
-        else:
-            return f'This user currently has no reviews'
-    
-# Make a join table? 
+    grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.username==username)).scalar_one_or_none()
+    user_reviews = db.session.execute(db.select(Review).where(Review.user_id == grabbed_user.id)).scalars().all()
+    if user_reviews:
+        return [r.to_dict() for r in user_reviews]
+    else:
+        return f'This user has not written any reviews'
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: UPDATE REVIEW
@@ -240,7 +243,7 @@ def edit_review(review_id):
     # find task by ID in database
     review = db.session.get(Review, review_id)
     if review is None:
-        return {'error':'Review with an ID of #{review_id} does not exist'}, 404
+        return {'error':'No review with that ID exists'}, 404
     # Get current user based on token
     current_user = token_auth.current_user()
     #check if current user is author of task
@@ -265,10 +268,10 @@ def delete_review(review_id):
     
     # make sure user trying to delete is the user whom create it 
     current_user = token_auth.current_user()
-    if review.author is not current_user:
+    if current_user is not review.author:
         return {'error':'You do not have permission to delete this review'}, 403 
     
     # delete task, calling delete method 
     review.delete()
-    return {'success':f'{review.title} was deleted successfully'}, 200
+    return {'success':'Your review was deleted'}, 200
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
