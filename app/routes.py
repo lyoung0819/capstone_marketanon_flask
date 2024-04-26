@@ -168,7 +168,7 @@ def create_review():
     # Grab current user ID 
     current_user = token_auth.current_user() 
     # Grab vendor ID
-    grabbed_vendor = db.session.execute(db.select(Vendor).filter_by(Vendor.company_name==vendor)).scalar_one()
+    grabbed_vendor = db.session.execute(db.select(Vendor).where(Vendor.company_name==vendor)).scalar_one()
     # check_vendors = db.session.execute(db.select(Vendor).where((Vendor.company_name == vendor))).scalars().all() 
     # if check_vendors:
     #     grabbed_vendor = db.session.get(Vendor).where(Vendor.company_name == vendor)
@@ -221,15 +221,15 @@ def get_user_reviews_by_ID(user_id):
     return f'This company currently has no reviews'
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# > FUNCTIONALIY: SEE ALL REVIEWS BY USERNAME 
-@app.route('/reviews/<username>')
-def get_user_reviews(username):
-    grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.username==username)).scalar_one_or_none()
-    user_reviews = db.session.execute(db.select(Review).where(Review.user_id == grabbed_user.id)).scalars().all()
-    if user_reviews:
-        return [r.to_dict() for r in user_reviews]
-    else:
-        return f'This user has not written any reviews'
+# > FUNCTIONALIY: SEE ALL REVIEWS BY USERNAME -- NOT FUNCTIONING
+# @app.route('/reviews/<username>')
+# def get_user_reviews(username):
+#     grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.username==username)).scalar_one()
+#     user_reviews = db.session.execute(db.select(Review).where(Review.user_id == grabbed_user.id)).scalars().all()
+#     if user_reviews:
+#         return [r.to_dict() for r in user_reviews]
+#     else:
+#         return f'This user has not written any reviews'
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
