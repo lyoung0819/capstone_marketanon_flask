@@ -1,4 +1,5 @@
 from flask import request, render_template
+from flask_cors import cross_origin
 from . import app, db
 from .models import UserBuyer, Vendor, Review
 from .auth import basic_auth, token_auth
@@ -7,6 +8,7 @@ from .auth import basic_auth, token_auth
                                     # >>>> HOME ENDPOINT <<<<<<
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @app.route('/')
+@cross_origin(supports_credentials=True)
 def index():
     return render_template('index.html')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,6 +20,7 @@ def index():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: CREATE USER
 @app.route('/users', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_user():
     # Make sure request body is json
     if not request.is_json:
@@ -54,6 +57,7 @@ def create_user():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE USER
 @app.route('/users/<int:user_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 @token_auth.login_required
 def delete_user(user_id):
     # Check if user exists
@@ -70,6 +74,7 @@ def delete_user(user_id):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCITONALITY: GET TOKEN 
 @app.route('/token')
+@cross_origin(supports_credentials=True)
 @basic_auth.login_required
 def get_token():
     user = basic_auth.current_user()
@@ -77,6 +82,7 @@ def get_token():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # GET ME route
 @app.route('/users/me')
+@cross_origin(supports_credentials=True)
 @token_auth.login_required
 def get_met():
     user = token_auth.current_user()
@@ -89,6 +95,7 @@ def get_met():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: ADD VENDOR
 @app.route('/vendors', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def add_vendor():
     # Make sure request body is json
     if not request.is_json:
@@ -119,6 +126,7 @@ def add_vendor():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE VENDOR
 @app.route('/vendors/<int:ven_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_vendor(ven_id):
     # Check if Vendor exists
     vendor = db.session.get(Vendor, ven_id)
@@ -129,6 +137,7 @@ def delete_vendor(ven_id):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALITY: SEE ALL VENDORS
 @app.route('/vendors')
+@cross_origin(supports_credentials=True)
 def find_vendors():
     vendors = db.session.execute(db.select(Vendor)).scalars().all() 
     return [v.to_dict() for v in vendors]
@@ -146,6 +155,7 @@ def find_vendors():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: CREATE NEW REVIEW
 @app.route('/reviews', methods=['POST'])
+@cross_origin(supports_credentials=True)
 @token_auth.login_required
 def create_review():
     # Req Obj must be json
@@ -193,6 +203,7 @@ def create_review():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE ALL REVIEWS
 @app.route('/reviews')
+@cross_origin(supports_credentials=True)
 def get_reviews():
     reviews = db.session.execute(db.select(Review)).scalars().all()
     if reviews:
@@ -203,6 +214,7 @@ def get_reviews():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE ALL REVIEWS BY VENDOR COMPANY_NAME
 @app.route('/reviews/<company_name>')
+@cross_origin(supports_credentials=True)
 def get_vendor_reviews(company_name):
     grabbed_vendor = db.session.execute(db.select(Vendor).where(Vendor.company_name==company_name)).scalar_one()
     reviews = db.session.execute(db.select(Review).where((Review.vendor_id == grabbed_vendor.id))).scalars().all()
@@ -213,6 +225,7 @@ def get_vendor_reviews(company_name):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: SEE ALL REVIEWS BY USER ID 
 @app.route('/reviews/<int:user_id>')
+@cross_origin(supports_credentials=True)
 def get_user_reviews_by_ID(user_id):
     grabbed_user = db.session.execute(db.select(UserBuyer).where(UserBuyer.id==user_id)).scalar_one_or_none()
     reviews = db.session.execute(db.select(Review).where((Review.user_id == grabbed_user.id))).scalars().all()
@@ -235,6 +248,7 @@ def get_user_reviews_by_ID(user_id):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: UPDATE REVIEW
 @app.route('/reviews/<int:review_id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 @token_auth.login_required
 def edit_review(review_id):
     # Check to see that they have a json body
@@ -259,6 +273,7 @@ def edit_review(review_id):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # > FUNCTIONALIY: DELETE REVIEW
 @app.route('/reviews/<int:review_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 @token_auth.login_required
 def delete_review(review_id):
     #check if the task exists 

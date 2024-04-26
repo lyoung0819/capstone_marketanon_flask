@@ -20,7 +20,7 @@ def handle_error(status_code):
 
 @token_auth.verify_token
 def verify(token):
-    user = db.session.execute(db.select(UserBuyer).where((UserBuyer.token==token))).scalar_one_or_none()
+    user = db.session.execute(db.select(UserBuyer).where(UserBuyer.token==token)).scalar_one_or_none()
     if user is not None and user.token_exp > datetime.now(timezone.utc):
         return user
     return None
